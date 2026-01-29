@@ -2,222 +2,227 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Trading First Exchange</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-
+<title>GLOBAL EXCHANGE - DEMO</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#0b0f1a;color:white}
-header{background:#0f172a;padding:12px;display:flex;justify-content:space-between}
-button{padding:8px 14px;border:none;border-radius:6px;cursor:pointer}
-.primary{background:#2563eb;color:white}
-.secondary{background:#1e293b;color:white}
-section{padding:20px}
-.hidden{display:none}
-.card{background:#111827;padding:15px;border-radius:10px;margin-bottom:15px}
-.market{height:360px;background:#020617;border-radius:12px}
-input{width:100%;padding:8px;margin:6px 0;border-radius:6px;border:none}
+body{margin:0;font-family:Arial;background:#0b0e11;color:white}
+header{background:#131722;padding:12px;display:flex;justify-content:space-between}
+h1{color:#f0b90b;font-size:18px;margin:0}
+.balance{background:#1e2329;padding:6px 12px;border-radius:5px}
+.container{display:grid;grid-template-columns:3fr 1fr;gap:10px;padding:10px}
+.box{background:#131722;padding:10px;border-radius:6px}
+input,select,button{width:100%;padding:8px;margin-top:5px;border:none;border-radius:4px}
+.buy{background:#0ecb81;color:white}
+.sell{background:#f6465d;color:white}
+table{width:100%;border-collapse:collapse}
+td{padding:4px;border-bottom:1px solid #222}
+.green{color:#0ecb81}
+.red{color:#f6465d}
+footer{text-align:center;background:#131722;padding:8px;margin-top:10px}
+.modal{position:fixed;width:100%;height:100%;background:#0009;display:none;justify-content:center;align-items:center}
+.modal-content{background:#131722;padding:20px;border-radius:6px;width:90%;max-width:400px}
+@media(max-width:900px){
+.container{grid-template-columns:1fr}
+}
 </style>
 </head>
 
 <body>
 
 <header>
-<strong>Trading First</strong>
-<div>
-<button id="btnLogin" class="secondary" onclick="show('login')">Connexion</button>
-<button id="btnSignup" class="secondary" onclick="show('signup')">Créer compte</button>
-<button id="btnLogout" class="primary hidden" onclick="logout()">Déconnexion</button>
-</div>
+<h1>GLOBAL EXCHANGE DEMO</h1>
+<div class="balance">Total: <b id="balance">$10000</b></div>
 </header>
 
-<!-- HOME -->
-<section id="home">
-<h2>Exchange Crypto</h2>
-<p>Plateforme sécurisée de trading numérique.</p>
-<div class="market"><canvas id="chart"></canvas></div>
-</section>
+<div class="container">
 
-<!-- LOGIN -->
-<section id="login" class="hidden">
-<div class="card">
-<h3>Connexion</h3>
-<input id="email" placeholder="Email">
-<input id="pass" type="password" placeholder="Mot de passe">
-<button class="primary" onclick="login()">Se connecter</button>
-</div>
-</section>
+<div>
+<div class="box"><canvas id="chart"></canvas></div>
 
-<!-- SIGNUP -->
-<section id="signup" class="hidden">
-<div class="card">
-<h3>Créer compte</h3>
-<input id="newEmail" placeholder="Email">
-<input id="newPass" type="password" placeholder="Mot de passe">
-<button class="primary" onclick="signup()">Créer</button>
-</div>
-</section>
-
-<!-- USER -->
-<section id="user" class="hidden">
-<h2>Tableau utilisateur</h2>
-
-<div class="card">
-UID : <span id="uid"></span><br>
-Solde : <span id="balance"></span>
+<div class="box">
+<h3>Marché</h3>
+<table id="market">
+<tr><td>BTC</td><td id="BTC" class="green">42000</td></tr>
+<tr><td>ETH</td><td id="ETH" class="green">2300</td></tr>
+<tr><td>SOL</td><td id="SOL" class="red">100</td></tr>
+</table>
 </div>
 
-<div class="card">
+<div class="box">
+<h3>Carnet d'ordres</h3>
+<table id="orderbook"></table>
+</div>
+</div>
+
+<div>
+
+<div class="box">
 <h3>Trading</h3>
-<button class="primary" onclick="trade()">Trader</button>
-<p id="tradeMsg"></p>
+
+<select id="pair">
+<option value="BTC">BTC</option>
+<option value="ETH">ETH</option>
+<option value="SOL">SOL</option>
+</select>
+
+<select id="type">
+<option value="market">Market Order</option>
+<option value="limit">Limit Order</option>
+</select>
+
+<input id="price" placeholder="Prix">
+<input id="qty" placeholder="Quantité">
+
+<button class="buy" onclick="trade('buy')">Acheter</button>
+<button class="sell" onclick="trade('sell')">Vendre</button>
 </div>
 
-<div class="card">
-<h3>Retrait</h3>
-<input id="withdrawAmount" placeholder="Montant">
-<button class="secondary" onclick="withdraw()">Demander retrait</button>
-<p id="withdrawMsg"></p>
+<div class="box">
+<h3>Wallet</h3>
+<table id="wallet"></table>
+<button onclick="modal('deposit')">Dépôt</button>
+<button onclick="modal('withdraw')">Retrait</button>
 </div>
 
-<div class="card">
-<h3>Historique</h3>
-<ul id="history"></ul>
-</div>
-</section>
-
-<!-- ADMIN -->
-<section id="admin" class="hidden">
-<h2>Dashboard Admin</h2>
-
-<div class="card">
-Solde Admin : <span id="adminBal"></span>
+<div class="box">
+<h3>Historique Trades</h3>
+<table id="trades"></table>
 </div>
 
-<div class="card">
-<h3>Envoyer solde</h3>
-<input id="sendUID" placeholder="UID">
-<input id="sendAmount" placeholder="Montant">
-<button class="primary" onclick="send()">Envoyer</button>
-<p id="sendMsg"></p>
+<div class="box">
+<button onclick="modal('login')">Connexion</button>
+<button onclick="modal('kyc')">Vérification KYC</button>
 </div>
-</section>
+
+</div>
+</div>
+
+<footer>Exchange Démo — Test final</footer>
+
+<div class="modal" id="modal">
+<div class="modal-content" id="modalContent"></div>
+</div>
 
 <script>
-let users = {};
-let currentUser = null;
-let adminBalance = 10000;
+let wallet={USD:10000,BTC:0,ETH:0,SOL:0};
+let trades=[];
+let prices={BTC:42000,ETH:2300,SOL:100};
 
-const ADMIN_EMAIL="admin";
-const ADMIN_PASS="admin123";
+function updateWallet(){
+let w=document.getElementById("wallet");
+w.innerHTML="";
+for(let c in wallet){
+let r=w.insertRow();
+r.insertCell(0).textContent=c;
+r.insertCell(1).textContent=wallet[c].toFixed(4);
+}
+document.getElementById("balance").textContent="$"+wallet.USD.toFixed(2);
+}
+updateWallet();
 
-function show(id){
-document.querySelectorAll("section").forEach(s=>s.classList.add("hidden"));
-document.getElementById(id).classList.remove("hidden");
+function trade(side){
+let pair=document.getElementById("pair").value;
+let qty=parseFloat(document.getElementById("qty").value);
+let price=parseFloat(document.getElementById("price").value)||prices[pair];
+if(!qty)return;
+
+let total=price*qty;
+
+if(side=="buy"){
+if(wallet.USD<total)return alert("Solde insuffisant");
+wallet.USD-=total;
+wallet[pair]+=qty;
+}else{
+if(wallet[pair]<qty)return alert("Crypto insuffisante");
+wallet[pair]-=qty;
+wallet.USD+=total;
 }
 
-function toggleLogin(state){
-btnLogin.classList.toggle("hidden",state);
-btnSignup.classList.toggle("hidden",state);
-btnLogout.classList.toggle("hidden",!state);
+trades.unshift({side,pair,price});
+updateWallet();
+updateTrades();
 }
 
-function signup(){
-let email=newEmail.value;
-let pass=newPass.value;
-users[email]={pass,balance:8,uid:"UID-"+Math.floor(Math.random()*99999),history:[]};
-alert("Compte créé");
-show("login");
-}
-
-function login(){
-let email=document.getElementById("email").value;
-let pass=document.getElementById("pass").value;
-
-if(email===ADMIN_EMAIL && pass===ADMIN_PASS){
-show("admin");
-adminBal.innerText=adminBalance+" USDT";
-toggleLogin(true);
-return;
-}
-
-if(!users[email]||users[email].pass!==pass){
-alert("Erreur connexion");
-return;
-}
-
-currentUser=email;
-loadUser();
-show("user");
-toggleLogin(true);
-}
-
-function logout(){
-currentUser=null;
-toggleLogin(false);
-show("home");
-}
-
-function loadUser(){
-uid.innerText=users[currentUser].uid;
-balance.innerText=users[currentUser].balance.toFixed(2)+" USDT";
-
-history.innerHTML="";
-users[currentUser].history.forEach(h=>{
-let li=document.createElement("li");
-li.innerText=h;
-history.appendChild(li);
+function updateTrades(){
+let t=document.getElementById("trades");
+t.innerHTML="";
+trades.slice(0,6).forEach(tr=>{
+let r=t.insertRow();
+let c=r.insertCell(0);
+c.textContent=(tr.side=="buy"?"Achat ":"Vente ")+tr.pair;
+c.className=tr.side=="buy"?"green":"red";
+r.insertCell(1).textContent="$"+tr.price;
 });
 }
 
-function trade(){
-let gain=(Math.random()*10-5).toFixed(2);
-users[currentUser].balance+=parseFloat(gain);
-users[currentUser].history.push("Trade: "+gain+" USDT");
-tradeMsg.innerText="Résultat: "+gain+" USDT";
-loadUser();
+function marketMove(){
+for(let p in prices){
+let move=(Math.random()*2-1)*100;
+prices[p]+=move;
+let el=document.getElementById(p);
+el.textContent=Math.round(prices[p]);
+el.className=move>=0?"green":"red";
+}
+updateOrderBook();
+}
+setInterval(marketMove,4000);
+
+function updateOrderBook(){
+let ob=document.getElementById("orderbook");
+ob.innerHTML="";
+for(let i=0;i<5;i++){
+let r=ob.insertRow();
+r.insertCell(0).textContent=(prices.BTC-(i*50)).toFixed(0);
+r.insertCell(1).textContent=(Math.random()*2).toFixed(3);
+}
 }
 
-function withdraw(){
-let amount=parseFloat(withdrawAmount.value);
-if(amount>users[currentUser].balance)return;
-users[currentUser].balance-=amount;
-users[currentUser].history.push("Retrait: "+amount+" USDT");
-withdrawMsg.innerText="Demande envoyée";
-loadUser();
-}
-
-function send(){
-let uid=sendUID.value;
-let amount=parseFloat(sendAmount.value);
-
-let user=Object.values(users).find(u=>u.uid===uid);
-if(!user)return;
-
-if(amount>adminBalance)return;
-
-adminBalance-=amount;
-user.balance+=amount;
-sendMsg.innerText="Envoyé";
-adminBal.innerText=adminBalance+" USDT";
-}
-
-// Graphique exchange
-const ctx=document.getElementById("chart").getContext("2d");
+const ctx=document.getElementById('chart');
 new Chart(ctx,{
 type:'line',
 data:{
-labels:Array.from({length:30},(_,i)=>i),
+labels:['1','2','3','4','5','6'],
 datasets:[{
-label:"BTC/USDT",
-data:Array.from({length:30},()=>100+Math.random()*20),
-borderColor:"#38bdf8",
-fill:false
+data:[41000,42000,41500,43000,42500,44000],
+borderColor:'#f0b90b'
 }]
-}
+},
+options:{plugins:{legend:{display:false}}}
 });
+
+function modal(type){
+let m=document.getElementById("modal");
+let c=document.getElementById("modalContent");
+
+if(type=="login"){
+c.innerHTML="<h3>Connexion</h3><input placeholder='Email'><input placeholder='Mot de passe'><button onclick='closeModal()'>Login</button>";
+}
+if(type=="deposit"){
+c.innerHTML="<h3>Dépôt USD</h3><input id='dep'><button onclick='deposit()'>Valider</button>";
+}
+if(type=="withdraw"){
+c.innerHTML="<h3>Retrait USD</h3><input id='with'><button onclick='withdraw()'>Valider</button>";
+}
+if(type=="kyc"){
+c.innerHTML="<h3>KYC Vérifié ✔</h3><p>Compte validé.</p><button onclick='closeModal()'>OK</button>";
+}
+
+m.style.display="flex";
+}
+
+function closeModal(){document.getElementById("modal").style.display="none"}
+
+function deposit(){
+let a=parseFloat(document.getElementById("dep").value);
+wallet.USD+=a;updateWallet();closeModal();
+}
+function withdraw(){
+let a=parseFloat(document.getElementById("with").value);
+if(wallet.USD>=a){wallet.USD-=a;updateWallet();}
+closeModal();
+}
 </script>
 
 </body>
