@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Trading First Exchange</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+
+<style>
+body{margin:0;font-family:Arial;background:#0b0f1a;color:white}
+header{background:#0f172a;padding:12px;display:flex;justify-content:space-between}
+button{padding:8px 14px;border:none;border-radius:6px;cursor:pointer}
+.primary{background:#2563eb;color:white}
+.secondary{background:#1e293b;color:white}
+section{padding:20px}
+.hidden{display:none}
+.card{background:#111827;padding:15px;border-radius:10px;margin-bottom:15px}
+.market{height:360px;background:#020617;border-radius:12px}
+input{width:100%;padding:8px;margin:6px 0;border-radius:6px;border:none}
+</style>
+</head>
+
+<body>
+
+<header>
+<strong>Trading First</strong>
+<div>
+<button id="btnLogin" class="secondary" onclick="show('login')">Connexion</button>
+<button id="btnSignup" class="secondary" onclick="show('signup')">Créer compte</button>
+<button id="btnLogout" class="primary hidden" onclick="logout()">Déconnexion</button>
+</div>
+</header>
+
+<!-- HOME -->
+<section id="home">
+<h2>Exchange Crypto</h2>
+<p>Plateforme sécurisée de trading numérique.</p>
+<div class="market"><canvas id="chart"></canvas></div>
+</section>
+
+<!-- LOGIN -->
+<section id="login" class="hidden">
+<div class="card">
+<h3>Connexion</h3>
+<input id="email" placeholder="Email">
+<input id="pass" type="password" placeholder="Mot de passe">
+<button class="primary" onclick="login()">Se connecter</button>
+</div>
+</section>
+
+<!-- SIGNUP -->
+<section id="signup" class="hidden">
+<div class="card">
+<h3>Créer compte</h3>
+<input id="newEmail" placeholder="Email">
+<input id="newPass" type="password" placeholder="Mot de passe">
+<button class="primary" onclick="signup()">Créer</button>
+</div>
+</section>
+
+<!-- USER -->
+<section id="user" class="hidden">
+<h2>Tableau utilisateur</h2>
+
+<div class="card">
+UID : <span id="uid"></span><br>
+Solde : <span id="balance"></span>
+</div>
+
+<div class="card">
+<h3>Trading</h3>
+<button class="primary" onclick="trade()">Trader</button>
+<p id="tradeMsg"></p>
+</div>
+
+<div class="card">
+<h3>Retrait</h3>
+<input id="withdrawAmount" placeholder="Montant">
+<button class="secondary" onclick="withdraw()">Demander retrait</button>
+<p id="withdrawMsg"></p>
+</div>
+
+<div class="card">
+<h3>Historique</h3>
+<ul id="history"></ul>
+</div>
+</section>
+
+<!-- ADMIN -->
+<section id="admin" class="hidden">
+<h2>Dashboard Admin</h2>
+
+<div class="card">
+Solde Admin : <span id="adminBal"></span>
+</div>
+
+<div class="card">
+<h3>Envoyer solde</h3>
+<input id="sendUID" placeholder="UID">
+<input id="sendAmount" placeholder="Montant">
+<button class="primary" onclick="send()">Envoyer</button>
+<p id="sendMsg"></p>
+</div>
+</section>
+
+<script>
+let users = {};
+let currentUser = null;
+let adminBalance = 10000;
+
+const ADMIN_EMAIL="admin";
+const ADMIN_PASS="admin123";
+
+function show(id){
+document.querySelectorAll("section").forEach(s=>s.classList.add("hidden"));
+document.getElementById(id).classList.remove("hidden");
+}
+
+function toggleLogin(state){
+btnLogin.classList.toggle("hidden",state);
+btnSignup.classList.toggle("hidden",state);
+btnLogout.classList.toggle("hidden",!state);
+}
+
+function signup(){
+let email=newEmail.value;
+let pass=newPass.value;
+users[email]={pass,balance:8,uid:"UID-"+Math.floor(Math.random()*99999),history:[]};
+alert("Compte créé");
+show("login");
+}
+
+function login(){
+let email=document.getElementById("email").value;
+let pass=document.getElementById("pass").value;
+
+if(email===ADMIN_EMAIL && pass===ADMIN_PASS){
+show("admin");
+adminBal.innerText=adminBalance+" USDT";
+toggleLogin(true);
+return;
+}
+
+if(!users[email]||users[email].pass!==pass){
+alert("Erreur connexion");
+return;
+}
+
+currentUser=email;
+loadUser();
+show("user");
+toggleLogin(true);
+}
+
+function logout(){
+currentUser=null;
+toggleLogin(false);
+show("home");
+}
+
+function loadUser(){
+uid.innerText=users[currentUser].uid;
+balance.innerText=users[currentUser].balance.toFixed(2)+" USDT";
+
+history.innerHTML="";
+users[currentUser].history.forEach(h=>{
+let li=document.createElement("li");
+li.innerText=h;
+history.appendChild(li);
+});
+}
+
+function trade(){
+let gain=(Math.random()*10-5).toFixed(2);
+users[currentUser].balance+=parseFloat(gain);
+users[currentUser].history.push("Trade: "+gain+" USDT");
+tradeMsg.innerText="Résultat: "+gain+" USDT";
+loadUser();
+}
+
+function withdraw(){
+let amount=parseFloat(withdrawAmount.value);
+if(amount>users[currentUser].balance)return;
+users[currentUser].balance-=amount;
+users[currentUser].history.push("Retrait: "+amount+" USDT");
+withdrawMsg.innerText="Demande envoyée";
+loadUser();
+}
+
+function send(){
+let uid=sendUID.value;
+let amount=parseFloat(sendAmount.value);
+
+let user=Object.values(users).find(u=>u.uid===uid);
+if(!user)return;
+
+if(amount>adminBalance)return;
+
+adminBalance-=amount;
+user.balance+=amount;
+sendMsg.innerText="Envoyé";
+adminBal.innerText=adminBalance+" USDT";
+}
+
+// Graphique exchange
+const ctx=document.getElementById("chart").getContext("2d");
+new Chart(ctx,{
+type:'line',
+data:{
+labels:Array.from({length:30},(_,i)=>i),
+datasets:[{
+label:"BTC/USDT",
+data:Array.from({length:30},()=>100+Math.random()*20),
+borderColor:"#38bdf8",
+fill:false
+}]
+}
+});
+</script>
+
+</body>
+</html>
