@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GLOBAL EXCHANGE - DEMO</title>
+<title>GLOBAL EXCHANGE - BINANCE LITE DEMO</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -12,7 +12,7 @@ header{background:#131722;padding:12px;display:flex;justify-content:space-betwee
 h1{color:#f0b90b;font-size:18px;margin:0}
 .balance{background:#1e2329;padding:6px 12px;border-radius:5px}
 .container{display:grid;grid-template-columns:3fr 1fr;gap:10px;padding:10px}
-.box{background:#131722;padding:10px;border-radius:6px}
+.box{background:#131722;padding:10px;border-radius:6px;margin-bottom:10px}
 input,select,button{width:100%;padding:8px;margin-top:5px;border:none;border-radius:4px}
 .buy{background:#0ecb81;color:white}
 .sell{background:#f6465d;color:white}
@@ -23,9 +23,7 @@ td{padding:4px;border-bottom:1px solid #222}
 footer{text-align:center;background:#131722;padding:8px;margin-top:10px}
 .modal{position:fixed;width:100%;height:100%;background:#0009;display:none;justify-content:center;align-items:center}
 .modal-content{background:#131722;padding:20px;border-radius:6px;width:90%;max-width:400px}
-@media(max-width:900px){
-.container{grid-template-columns:1fr}
-}
+@media(max-width:900px){.container{grid-template-columns:1fr}}
 </style>
 </head>
 
@@ -33,7 +31,7 @@ footer{text-align:center;background:#131722;padding:8px;margin-top:10px}
 
 <header>
 <h1>GLOBAL EXCHANGE DEMO</h1>
-<div class="balance">Total: <b id="balance">$10000</b></div>
+<div class="balance">USD: <b id="balance">$10000</b></div>
 </header>
 
 <div class="container">
@@ -42,8 +40,8 @@ footer{text-align:center;background:#131722;padding:8px;margin-top:10px}
 <div class="box"><canvas id="chart"></canvas></div>
 
 <div class="box">
-<h3>Marché</h3>
-<table id="market">
+<h3>Marché Live</h3>
+<table>
 <tr><td>BTC</td><td id="BTC" class="green">42000</td></tr>
 <tr><td>ETH</td><td id="ETH" class="green">2300</td></tr>
 <tr><td>SOL</td><td id="SOL" class="red">100</td></tr>
@@ -54,22 +52,21 @@ footer{text-align:center;background:#131722;padding:8px;margin-top:10px}
 <h3>Carnet d'ordres</h3>
 <table id="orderbook"></table>
 </div>
+
+<div class="box">
+<h3>Signaux Trading</h3>
+<table id="signals"></table>
+</div>
 </div>
 
 <div>
 
 <div class="box">
 <h3>Trading</h3>
-
 <select id="pair">
-<option value="BTC">BTC</option>
-<option value="ETH">ETH</option>
-<option value="SOL">SOL</option>
-</select>
-
-<select id="type">
-<option value="market">Market Order</option>
-<option value="limit">Limit Order</option>
+<option>BTC</option>
+<option>ETH</option>
+<option>SOL</option>
 </select>
 
 <input id="price" placeholder="Prix">
@@ -84,22 +81,39 @@ footer{text-align:center;background:#131722;padding:8px;margin-top:10px}
 <table id="wallet"></table>
 <button onclick="modal('deposit')">Dépôt</button>
 <button onclick="modal('withdraw')">Retrait</button>
+<button onclick="modal('send')">Envoyer argent</button>
 </div>
 
 <div class="box">
-<h3>Historique Trades</h3>
+<h3>Trades récents</h3>
 <table id="trades"></table>
 </div>
 
 <div class="box">
-<button onclick="modal('login')">Connexion</button>
-<button onclick="modal('kyc')">Vérification KYC</button>
+<h3>Profil</h3>
+<p>ID: USER001</p>
+<p>Niveau: Trader Démo</p>
+</div>
+
+<div class="box">
+<h3>Parrainage</h3>
+<p>Code: <b>GLOBAL123</b></p>
+</div>
+
+<div class="box">
+<h3>Support</h3>
+<p>support@exchange.demo</p>
+<button onclick="alert('Support contacté')">Contacter</button>
+</div>
+
+<div class="box">
+<button onclick="modal('admin')">Admin Panel</button>
 </div>
 
 </div>
 </div>
 
-<footer>Exchange Démo — Test final</footer>
+<footer>Exchange Demo — Binance Lite Test</footer>
 
 <div class="modal" id="modal">
 <div class="modal-content" id="modalContent"></div>
@@ -153,21 +167,23 @@ let r=t.insertRow();
 let c=r.insertCell(0);
 c.textContent=(tr.side=="buy"?"Achat ":"Vente ")+tr.pair;
 c.className=tr.side=="buy"?"green":"red";
-r.insertCell(1).textContent="$"+tr.price;
+r.insertCell(1).textContent="$"+Math.round(tr.price);
 });
 }
 
 function marketMove(){
 for(let p in prices){
-let move=(Math.random()*2-1)*100;
+let move=(Math.random()*2-1)*150;
 prices[p]+=move;
 let el=document.getElementById(p);
 el.textContent=Math.round(prices[p]);
 el.className=move>=0?"green":"red";
 }
 updateOrderBook();
+updateSignals();
+updateChart();
 }
-setInterval(marketMove,4000);
+setInterval(marketMove,3000);
 
 function updateOrderBook(){
 let ob=document.getElementById("orderbook");
@@ -179,35 +195,49 @@ r.insertCell(1).textContent=(Math.random()*2).toFixed(3);
 }
 }
 
+function updateSignals(){
+let s=document.getElementById("signals");
+s.innerHTML="";
+["BTC","ETH","SOL"].forEach(c=>{
+let r=s.insertRow();
+let sig=Math.random()>0.5?"BUY":"SELL";
+let cell=r.insertCell(0);
+cell.textContent=c+" "+sig;
+cell.className=sig=="BUY"?"green":"red";
+});
+}
+
 const ctx=document.getElementById('chart');
-new Chart(ctx,{
+let chartData=[42000,42100,41900,42300,42500,42400];
+let chart=new Chart(ctx,{
 type:'line',
-data:{
-labels:['1','2','3','4','5','6'],
-datasets:[{
-data:[41000,42000,41500,43000,42500,44000],
-borderColor:'#f0b90b'
-}]
-},
+data:{labels:[1,2,3,4,5,6],
+datasets:[{data:chartData,borderColor:'#f0b90b'}]},
 options:{plugins:{legend:{display:false}}}
 });
+
+function updateChart(){
+chartData.push(prices.BTC);
+chartData.shift();
+chart.data.datasets[0].data=chartData;
+chart.update();
+}
 
 function modal(type){
 let m=document.getElementById("modal");
 let c=document.getElementById("modalContent");
 
-if(type=="login"){
-c.innerHTML="<h3>Connexion</h3><input placeholder='Email'><input placeholder='Mot de passe'><button onclick='closeModal()'>Login</button>";
-}
-if(type=="deposit"){
+if(type=="deposit")
 c.innerHTML="<h3>Dépôt USD</h3><input id='dep'><button onclick='deposit()'>Valider</button>";
-}
-if(type=="withdraw"){
+
+if(type=="withdraw")
 c.innerHTML="<h3>Retrait USD</h3><input id='with'><button onclick='withdraw()'>Valider</button>";
-}
-if(type=="kyc"){
-c.innerHTML="<h3>KYC Vérifié ✔</h3><p>Compte validé.</p><button onclick='closeModal()'>OK</button>";
-}
+
+if(type=="send")
+c.innerHTML="<h3>Envoyer USD</h3><input id='sendAmt'><button onclick='sendMoney()'>Envoyer</button>";
+
+if(type=="admin")
+c.innerHTML="<h3>Admin Panel</h3><button onclick='wallet.USD+=10000;updateWallet()'>Ajouter Liquidité</button><button onclick='closeModal()'>Fermer</button>";
 
 m.style.display="flex";
 }
@@ -215,14 +245,24 @@ m.style.display="flex";
 function closeModal(){document.getElementById("modal").style.display="none"}
 
 function deposit(){
-let a=parseFloat(document.getElementById("dep").value);
-wallet.USD+=a;updateWallet();closeModal();
+wallet.USD+=parseFloat(document.getElementById("dep").value);
+updateWallet();closeModal();
 }
+
 function withdraw(){
 let a=parseFloat(document.getElementById("with").value);
-if(wallet.USD>=a){wallet.USD-=a;updateWallet();}
-closeModal();
+if(wallet.USD>=a){wallet.USD-=a;}
+updateWallet();closeModal();
 }
+
+function sendMoney(){
+let a=parseFloat(document.getElementById("sendAmt").value);
+if(wallet.USD>=a){wallet.USD-=a;}
+updateWallet();closeModal();
+}
+
+updateSignals();
+updateOrderBook();
 </script>
 
 </body>
