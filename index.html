@@ -1,31 +1,147 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Global Exchange</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let wallet={USDT:10000,BTC:0,ETH:0};
+let prices={BTC:42000,ETH:2300};
+let balanceVisible=false;
 
-<style>
-body{margin:0;font-family:Segoe UI,Arial;background:#0b0e11;color:#fff;font-size:12px}
-header{background:#111;padding:8px;display:flex;justify-content:space-between}
-h1{color:#ff9900;font-size:15px;margin:0}
-.container{display:grid;grid-template-columns:3fr 1fr;gap:8px;padding:8px}
-.box{background:#131722;padding:8px;border-radius:6px;margin-bottom:8px}
-button,input,select{width:100%;padding:6px;margin-top:4px;border:none;border-radius:4px;font-size:12px}
-.buy{background:#0ecb81}
-.sell{background:#f6465d}
-.green{color:#0ecb81}
-.red{color:#f6465d}
-.balance{background:#1a1a1a;padding:5px;border-radius:5px}
-footer{text-align:center;background:#111;padding:6px}
-.modal{position:fixed;width:100%;height:100%;background:#0009;display:none;justify-content:center;align-items:center}
-.modal-content{background:#131722;padding:15px;border-radius:6px;width:90%;max-width:400px}
-table{width:100%;border-collapse:collapse}
-td{padding:3px;border-bottom:1px solid #222}
-@media(max-width:900px){.container{grid-template-columns:1fr}}
-</style>
-</head>
+function toggleBalance(){
+balanceVisible=!balanceVisible;
+document.getElementById("balance").textContent=
+balanceVisible?wallet.USDT.toFixed(2):"******";
+}
+
+function trade(side){
+let pair=document.getElementById("pair").value;
+let qty=parseFloat(document.getElementById("qty").value);
+if(!qty)return alert("Quantité invalide");
+
+let total=qty*prices[pair];
+
+if(side=="buy"){
+if(wallet.USDT<total)return alert("Solde insuffisant");
+wallet.USDT-=total;
+wallet[pair]+=qty;
+}else{
+if(wallet[pair]<qty)return alert("Crypto insuffisante");
+wallet[pair]-=qty;
+wallet.USDT+=total;
+}
+
+toggleBalance();toggleBalance();
+alert("Trade exécuté");
+}
+
+function modal(type){
+let c=document.getElementById("modalContent");
+
+if(type=="deposit"){
+c.innerHTML=`
+<h3>Dépôt</h3>
+<input id="depAmt" placeholder="Montant">
+<button onclick="deposit()">Confirmer</button>`;
+}
+
+if(type=="withdraw"){
+c.innerHTML=`
+<h3>Retrait</h3>
+<input id="wDest" placeholder="Destinataire">
+<input id="wAmt" placeholder="Montant">
+<button onclick="generateWithdrawCode()">Générer code</button>
+<div id="withdrawConfirm"></div>`;
+}
+
+if(type=="send"){
+c.innerHTML=`
+<h3>Envoyer fonds</h3>
+<input id="sDest" placeholder="Utilisateur">
+<input id="sAmt" placeholder="Montant">
+<button onclick="generateSendCode()">Générer code</button>
+<div id="sendConfirm"></div>`;
+}
+
+document.getElementById("modal").style.display="flex";
+}
+
+function deposit(){
+let amt=parseFloat(document.getElementById("depAmt").value);
+wallet.USDT+=amt;
+toggleBalance();toggleBalance();
+alert("Dépôt confirmé");
+closeModal();
+}
+
+function generateWithdrawCode(){
+let amt=parseFloat(wAmt.value);
+let dest=wDest.value;
+if(!amt||!dest)return alert("Champs manquants");
+
+let code=Math.floor(100000+Math.random()*900000);
+
+withdrawConfirm.innerHTML=`
+<p>Code: <b>${code}</b></p>
+<input id="wCode" placeholder="Entrer code">
+<button onclick="confirmWithdraw(${code},${amt},'${dest}')">
+Confirmer retrait</button>`;
+}
+
+function confirmWithdraw(code,amt,dest){
+if(parseInt(wCode.value)!==code)
+return alert("Code invalide");
+
+if(wallet.USDT<amt)
+return alert("Solde insuffisant");
+
+wallet.USDT-=amt;
+toggleBalance();toggleBalance();
+alert("Retrait envoyé à "+dest);
+closeModal();
+}
+
+function generateSendCode(){
+let amt=parseFloat(sAmt.value);
+let dest=sDest.value;
+if(!amt||!dest)return alert("Champs manquants");
+
+let code=Math.floor(100000+Math.random()*900000);
+
+sendConfirm.innerHTML=`
+<p>Code: <b>${code}</b></p>
+<input id="sCode" placeholder="Entrer code">
+<button onclick="confirmSend(${code},${amt},'${dest}')">
+Confirmer envoi</button>`;
+}
+
+function confirmSend(code,amt,dest){
+if(parseInt(sCode.value)!==code)
+return alert("Code invalide");
+
+if(wallet.USDT<amt)
+return alert("Solde insuffisant");
+
+wallet.USDT-=amt;
+toggleBalance();toggleBalance();
+alert("Envoyé à "+dest);
+closeModal();
+}
+
+function closeModal(){
+document.getElementById("modal").style.display="none";
+}
+
+function marketMove(){
+for(let p in prices){
+let m=(Math.random()*2-1)*100;
+prices[p]+=m;
+let el=document.getElementById(p);
+if(el){
+el.textContent=Math.round(prices[p]);
+el.className=m>=0?"green":"red";
+}
+}
+}
+setInterval(marketMove,3000);
+</script>
 
 <body>
 
